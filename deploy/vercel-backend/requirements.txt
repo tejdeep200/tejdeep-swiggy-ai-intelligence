@@ -7,3 +7,4 @@ langgraph>=1.0,<2
 pydantic>=2.10,<3
 snowflake-connector-python>=3.14,<5
 fastembed>=0.7,<1
+kokoro-onnx>=0.6.1,<0.7

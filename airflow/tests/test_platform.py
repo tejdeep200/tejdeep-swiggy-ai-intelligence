@@ -153,3 +153,35 @@ def test_cloud_encoder_uses_writable_serverless_caches(monkeypatch):
         assert cloud_rag.encoder() == "encoder"
     finally:
         cloud_rag.encoder.cache_clear()
+
+
+def test_natural_voice_is_authenticated_bounded_and_returns_audio(monkeypatch):
+    from fastapi.testclient import TestClient
+    from backend.main import app
+    from swiggy_platform import config
+    from swiggy_platform import speech
+    monkeypatch.setattr(speech, "_groq_blocked_until", 0)
+    monkeypatch.setenv("APP_API_TOKEN", "voice-test-token")
+    client = TestClient(app)
+    groq = Mock()
+    groq.with_options.return_value.audio.speech.create.return_value.content = b"RIFFtest-audio"
+    monkeypatch.setattr(config, "groq_client", lambda: groq)
+    assert client.post("/api/speech", json={"text": "Hello"}).status_code == 401
+    headers = {"Authorization": "Bearer voice-test-token"}
+    assert client.post("/api/speech", headers=headers, json={"text": "x" * 201}).status_code == 422
+    response = client.post("/api/speech", headers=headers, json={"text": "Hello"})
+    assert response.status_code == 200 and response.content.startswith(b"RIFF")
+    assert response.headers["content-type"] == "audio/wav"
+    assert groq.with_options.return_value.audio.speech.create.call_args.kwargs["voice"] == "hannah"
+
+
+def test_natural_female_voice_survives_provider_terms_block(monkeypatch):
+    from swiggy_platform import config, speech
+    monkeypatch.setattr(speech, "_groq_blocked_until", 0)
+    groq = Mock()
+    groq.with_options.return_value.audio.speech.create.side_effect = RuntimeError("model_terms_required")
+    monkeypatch.setattr(config, "groq_client", lambda: groq)
+    monkeypatch.setattr(speech, "kokoro_audio", lambda text: b"RIFFnatural-female-audio")
+    assert speech.synthesize("Hello") == (b"RIFFnatural-female-audio", "Heart")
+    assert speech.synthesize("Hello again")[1] == "Heart"
+    assert groq.with_options.return_value.audio.speech.create.call_count == 1

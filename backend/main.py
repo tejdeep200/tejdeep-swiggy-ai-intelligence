@@ -5,6 +5,7 @@ from typing import Literal
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from swiggy_platform.config import load_env
@@ -28,6 +29,21 @@ class Message(BaseModel):
 class Question(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     history: list[Message] = Field(default_factory=list, max_length=6)
+
+
+class SpeechRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=200)
+
+
+@app.post("/api/speech", dependencies=[Depends(authorize)])
+def speech(request: SpeechRequest):
+    from swiggy_platform.speech import synthesize
+    try:
+        audio, name = synthesize(request.text)
+        return Response(audio, media_type="audio/wav", headers={"Cache-Control": "no-store", "X-Voice-Name": name})
+    except Exception as exc:
+        LOG.warning("Natural speech generation unavailable (%s, errno=%s)", type(exc).__name__, getattr(exc, "errno", None))
+        raise HTTPException(503, detail={"code": "voice_unavailable", "message": "Natural voice is temporarily unavailable. Using a device voice."}) from None
 
 
 @app.get("/health")

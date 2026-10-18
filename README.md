@@ -109,9 +109,13 @@ Revenue, order volume, delivery performance, reviews, sentiment and churn are
 absent from this Swiggy dataset and are explicitly rejected. Average listing
 price is not revenue. Recharts renders actual returned SQL results; these are
 not Power BI visuals. The microphone records on user action, transcribes through
-Groq Whisper and fills the question field; submit with Ask Swiggy. Browser speech
-synthesis speaks answers and animates the existing mascot's mouth. Hardware
-microphone/speaker verification requires an interactive browser session.
+Groq Whisper and fills the question field; submit with Ask Swiggy. Natural female
+narration uses Groq Hannah, then self-hosted Kokoro Heart if unavailable, then an
+available female browser voice. Short summaries are capped at 200 characters.
+Stop voice cancels pending audio and switches to charts only; Play summary resumes
+narration. Charts only / Show analysis toggles the written detail. Kokoro downloads
+its model to temporary storage on first use, so cold starts can take longer.
+Hardware microphone/speaker verification requires an interactive browser session.
 
 ## Power BI
 
