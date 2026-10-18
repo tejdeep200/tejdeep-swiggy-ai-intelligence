@@ -115,6 +115,10 @@ available female browser voice. Short summaries are capped at 200 characters.
 Stop voice cancels pending audio and switches to charts only; Play summary resumes
 narration. Charts only / Show analysis toggles the written detail. Kokoro downloads
 its model to temporary storage on first use, so cold starts can take longer.
+On Vercel, deploy `deploy/vercel-voice` separately using
+`scripts/prepare_vercel_voice.py`; configure its Groq key and application token
+with `scripts/configure_vercel_env.py voice`. Set the frontend server-only
+`SPEECH_URL` to that service URL. This isolates voice model storage from RAG.
 Hardware microphone/speaker verification requires an interactive browser session.
 
 ## Power BI

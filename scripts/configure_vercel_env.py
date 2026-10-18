@@ -11,8 +11,9 @@ sys.path.insert(0, str(ROOT))
 from swiggy_platform.config import load_env
 
 parser = argparse.ArgumentParser()
-parser.add_argument("target", choices=["backend", "frontend"])
+parser.add_argument("target", choices=["backend", "frontend", "voice"])
 parser.add_argument("--backend-url")
+parser.add_argument("--speech-url")
 args = parser.parse_args()
 load_env()
 if args.target == "backend":
@@ -23,11 +24,16 @@ if args.target == "backend":
     values.update(SNOWFLAKE_PRIVATE_KEY_BASE64=base64.b64encode(key.read_bytes()).decode(),
                   SNOWFLAKE_ROLE="SWIGGY_APP_READER", SNOWFLAKE_DATABASE="SWIGGY", SNOWFLAKE_WAREHOUSE="SWIGGY_WH",
                   RAG_STORE="snowflake", GROQ_MODEL=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"))
+elif args.target == "voice":
+    directory = ROOT / "runtime/vercel-voice"
+    values = {name: os.environ[name] for name in ("GROQ_API_KEY", "APP_API_TOKEN")}
 else:
     if not args.backend_url:
         parser.error("--backend-url is required")
     directory = ROOT / "frontend"
     values = {"BACKEND_URL": args.backend_url, "APP_API_TOKEN": os.environ["APP_API_TOKEN"]}
+    if args.speech_url:
+        values["SPEECH_URL"] = args.speech_url
 
 for name, value in values.items():
     completed = subprocess.run(["npx.cmd" if os.name == "nt" else "npx", "--yes", "vercel", "env", "add", name,
