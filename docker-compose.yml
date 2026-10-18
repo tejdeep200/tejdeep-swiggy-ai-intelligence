@@ -1,0 +1,39 @@
+name: swiggy-airflow
+include:
+  - path: ./airflow/docker-compose.yaml
+    env_file: ./airflow/.env
+services:
+  backend:
+    image: swiggy-backend:local
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: ./airflow/.env
+    environment:
+      SNOWFLAKE_PRIVATE_KEY_PATH: /run/keys/swiggy_dbt_key.p8
+      CHROMA_HOST: chroma
+      CHROMA_PORT: '8000'
+    volumes:
+      - ${SNOWFLAKE_KEY_DIR:-C:/Users/Tej19/.dbt/keys}:/run/keys:ro
+      - ./swiggy_platform:/app/swiggy_platform:ro
+      - ./backend:/app/backend:ro
+      - ./config:/app/config:ro
+    ports:
+      - 127.0.0.1:8000:8000
+    depends_on:
+      - chroma
+    restart: unless-stopped
+  frontend:
+    image: swiggy-frontend:local
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    env_file: ./airflow/.env
+    environment:
+      BACKEND_URL: http://backend:8000
+      PORT: '3000'
+    ports:
+      - 127.0.0.1:3000:3000
+    depends_on:
+      - backend
+    restart: unless-stopped

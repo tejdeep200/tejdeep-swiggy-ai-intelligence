@@ -1,0 +1,34 @@
+.venv/
+.tools/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Local Airflow runtime output
+logs/
+swiggy_dbt/logs/
+swiggy_dbt/target/
+airflow/logs/
+node_modules/
+.next/
+runtime/
+.npm-cache/
+.pytest_cache/
+.cache/
+*.tsbuildinfo
+runtime-*.log
+# Local datasets, references and alternate sample project
+data/
+original_data/
+refrence_folder/
+swiggy_dbt_1/
+**/dbt_packages/
+**/target/
+*.p8
+*.pem
+*.key
+*.pfx
+*.p12

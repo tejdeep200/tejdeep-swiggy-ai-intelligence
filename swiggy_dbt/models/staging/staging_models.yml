@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_cities
+    columns:
+      - name: city_id
+        data_tests: [not_null, unique]
+      - name: city_name
+        data_tests: [not_null]
+
+  - name: stg_cuisines
+    columns:
+      - name: cuisine_id
+        data_tests: [not_null, unique]
+      - name: cuisine_name
+        data_tests: [not_null]
+
+  - name: stg_restaurants
+    columns:
+      - name: restaurant_id
+        data_tests: [not_null, unique]
+      - name: restaurant_name
+        data_tests: [not_null]
+
+  - name: stg_restaurant_cuisines
+    columns:
+      - name: restaurant_id
+        data_tests: [not_null]
+      - name: cuisine_id
+        data_tests: [not_null]

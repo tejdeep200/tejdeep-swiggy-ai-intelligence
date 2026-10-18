@@ -1,0 +1,17 @@
+.venv
+.tools
+.git
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.next
+**/__pycache__
+**/logs
+**/target
+**/dbt_packages
+data
+original_data
+runtime
+.npm-cache
+refrence_folder

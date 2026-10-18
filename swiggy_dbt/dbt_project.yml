@@ -1,0 +1,33 @@
+
+name: 'swiggy_dbt'
+version: '1.0.0'
+config-version: 2
+
+# Matches the connection defined in C:\Users\Tej19\.dbt\profiles.yml.
+profile: 'swiggy_dbt'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# The target schema in profiles.yml is STAGING. Models in models/staging
+# therefore build as SWIGGY.STAGING.<model>.
+models:
+  swiggy_dbt:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+      +schema: MARTS
+
+# Snapshot files placed in snapshots/ build history tables in SWIGGY.SNAPSHOT.
+snapshots:
+  swiggy_dbt:
+    +target_schema: SNAPSHOT

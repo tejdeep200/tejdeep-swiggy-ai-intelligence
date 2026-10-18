@@ -1,0 +1,6 @@
+{
+  "name": "swiggy-ai-intelligence", "version": "1.0.0", "private": true,
+  "scripts": {"dev": "next dev --hostname 127.0.0.1", "build": "next build", "start": "next start --hostname 0.0.0.0"},
+  "dependencies": {"next": "^15.5.0", "react": "^19.1.0", "react-dom": "^19.1.0", "recharts": "^3.0.0", "three": "^0.180.0", "@react-three/fiber": "^9.3.0", "powerbi-client": "^2.23.0", "powerbi-client-react": "^2.0.0"},
+  "devDependencies": {"typescript": "^5.9.0", "@types/node": "^24.0.0", "@types/react": "^19.0.0", "@types/react-dom": "^19.0.0", "@types/three": "^0.180.0"}
+}

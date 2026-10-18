@@ -1,0 +1,109 @@
+name: swiggy-airflow
+x-airflow-common: &airflow-common
+  build: .
+  image: swiggy-airflow:local
+  env_file: .env
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:?Run scripts/setup_airflow.py first}
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:?Run scripts/setup_airflow.py first}
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://apiserver:8080/execution/
+    SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT:-BOGUXQG-NL95720}
+    SNOWFLAKE_USER: ${SNOWFLAKE_USER:-NETHATEJDEEP@GMAIL.COM}
+    SNOWFLAKE_ROLE: ${SNOWFLAKE_ROLE:-ACCOUNTADMIN}
+    DBT_SNOWFLAKE_KEY_PASSPHRASE: ${DBT_SNOWFLAKE_KEY_PASSPHRASE:-}
+    SWIGGY_RAW_STAGE: ${SWIGGY_RAW_STAGE:-SWIGGY.RAW.SWIGGY_LOCAL_STAGE}
+    SNOWFLAKE_PRIVATE_KEY_PATH: /opt/airflow/keys/swiggy_dbt_key.p8
+    PYTHONPATH: /opt/airflow/project
+    CHROMA_HOST: chroma
+    CHROMA_PORT: '8000'
+  volumes:
+    - ./dags:/opt/airflow/dags:ro
+    - ./logs:/opt/airflow/logs
+    - ../swiggy_dbt:/opt/airflow/dbt/swiggy_dbt
+    - ./profiles:/opt/airflow/dbt/profiles:ro
+    - ../swiggy_platform:/opt/airflow/project/swiggy_platform:ro
+    - ../config:/opt/airflow/project/config:ro
+    - ./include:/opt/airflow/include:ro
+    - ${SNOWFLAKE_KEY_DIR:-C:/Users/Tej19/.dbt/keys}:/opt/airflow/keys:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  chroma:
+    image: chromadb/chroma:1.5.0
+    volumes:
+      - chromadata:/data
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD, pg_isready, -U, airflow]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  airflow-init:
+    <<: *airflow-common
+    environment:
+      <<: *airflow-env
+      LOCAL_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:?Run scripts/setup_airflow.py first}
+    entrypoint: /bin/bash
+    command:
+      - -ec
+      - |
+        airflow db migrate
+        airflow pools set groq_api 1 'Serialized Groq enrichment requests'
+        airflow pools set embedding_workers 1 'Bounded embedding memory usage'
+        if ! airflow users list --output json | python -c 'import json,sys; sys.exit(0 if any(u["username"] == "admin" for u in json.load(sys.stdin)) else 1)'; then
+          airflow users create --username admin --password "$$LOCAL_ADMIN_PASSWORD" --firstname Swiggy --lastname Admin --role Admin --email admin@localhost.local
+        fi
+
+  apiserver:
+    <<: *airflow-common
+    command: api-server
+    ports:
+      - 127.0.0.1:${AIRFLOW_UI_PORT:-8081}:8080
+    restart: unless-stopped
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, curl, --fail, http://localhost:8080/api/v2/monitor/health]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: unless-stopped
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    restart: unless-stopped
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  chromadata:

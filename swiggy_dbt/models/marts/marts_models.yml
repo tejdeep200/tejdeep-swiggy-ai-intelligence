@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_cities
+    columns:
+      - name: city_id
+        data_tests: [not_null, unique]
+
+  - name: dim_cuisines
+    columns:
+      - name: cuisine_id
+        data_tests: [not_null, unique]
+
+  - name: dim_restaurants
+    columns:
+      - name: restaurant_id
+        data_tests: [not_null, unique]
+
+  - name: mart_city_restaurant_performance
+    columns:
+      - name: city_id
+        data_tests: [not_null, unique]
+
+  - name: mart_cuisine_restaurant_coverage
+    columns:
+      - name: cuisine_id
+        data_tests: [not_null, unique]

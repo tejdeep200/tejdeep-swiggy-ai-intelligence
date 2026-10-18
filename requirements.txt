@@ -1,0 +1,7 @@
+# Current-stage tool: Snowflake CLI for local connection and SQL commands.
+# This records the dependency; creating .venv does not install this package.
+snowflake-cli==3.29.0
+
+# CSV inspection currently uses Python's standard library:
+# csv, collections, json, pathlib. These do not need pip installation.
+# Add other dependencies when their project phase starts.

@@ -1,0 +1,11 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.34,<1
+python-multipart>=0.0.20,<1
+python-dotenv>=1.1,<2
+groq>=1.7,<2
+httpx>=0.28,<1
+langgraph>=0.4,<2
+pydantic>=2.10,<3
+snowflake-connector-python>=3.14,<5
+chromadb>=1.0,<2
+sentence-transformers>=4,<6

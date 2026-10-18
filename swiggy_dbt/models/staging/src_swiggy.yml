@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: raw_swiggy
+    database: SWIGGY
+    schema: RAW
+    tables:
+      - name: cities
+      - name: cuisines
+      - name: restaurants
+      - name: restaurant_cuisines

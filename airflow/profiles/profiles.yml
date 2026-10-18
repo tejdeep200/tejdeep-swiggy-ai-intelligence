@@ -1,0 +1,14 @@
+swiggy_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE') }}"
+      warehouse: SWIGGY_WH
+      database: SWIGGY
+      schema: STAGING
+      threads: 4
+      private_key_path: /opt/airflow/keys/swiggy_dbt_key.p8
+      private_key_passphrase: "{{ env_var('DBT_SNOWFLAKE_KEY_PASSPHRASE') }}"
