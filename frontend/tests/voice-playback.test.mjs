@@ -40,3 +40,33 @@ test('an unavailable natural voice falls back to an available female device voic
   const {voice,state}=fixture(async()=>Response.json({detail:{message:'Natural voice needs terms acceptance.'}},{status:503}));
   await voice.speak('Hi!');assert.equal(state.utterance.voice.name,'Microsoft Zira');assert.equal(state.utterance.rate,.95);
 });
+
+
+test('a natural female browser voice starts without a server request',async()=>{
+  let requests=0;
+  const {voice,state,platform}=fixture(async()=>{requests++;throw new Error('should not fetch')});
+  platform.synth.getVoices=()=>[{name:'Microsoft Jenny Online (Natural)',lang:'en-US'}];
+  await voice.speak('Hi!');
+  assert.equal(requests,0);assert.equal(state.utterance.voice.name,'Microsoft Jenny Online (Natural)');
+  assert.equal(state.loading,false);
+});
+
+test('slow server audio falls back within 1.5 seconds and never plays late',async(t)=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  let resolve,signal;
+  const {voice,state}=fixture((_url,options)=>{signal=options.signal;return new Promise(r=>{resolve=r})});
+  const pending=voice.speak('Hi!');
+  t.mock.timers.tick(1500);await pending;
+  assert.equal(signal.aborted,true);assert.equal(state.utterance.voice.name,'Microsoft Zira');
+  resolve(new Response(new Blob(['RIFFaudio'])));await Promise.resolve();
+  assert.equal(state.played,0);assert.equal(state.loading,false);
+});
+
+test('Stop prevents the latency deadline from starting fallback speech',async(t)=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  let resolve;
+  const {voice,state}=fixture(()=>new Promise(r=>{resolve=r}));
+  const pending=voice.speak('Hi!');voice.stop();t.mock.timers.tick(2000);
+  resolve(new Response(new Blob(['RIFFaudio'])));await pending;
+  assert.equal(state.utterance,null);assert.equal(state.played,0);
+});

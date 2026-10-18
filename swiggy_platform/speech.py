@@ -74,7 +74,7 @@ def synthesize(text):
     if time.monotonic() >= _groq_blocked_until:
         from .config import groq_client
         try:
-            response = groq_client().with_options(max_retries=1, timeout=30).audio.speech.create(
+            response = groq_client().with_options(max_retries=0, timeout=3).audio.speech.create(
                 model="canopylabs/orpheus-v1-english", voice="hannah", input=text, response_format="wav")
             return response.content, "Hannah"
         except Exception:
