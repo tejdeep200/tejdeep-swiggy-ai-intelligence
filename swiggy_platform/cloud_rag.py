@@ -35,6 +35,14 @@ def mirror_collection(collection_name, client=None):
 
 @lru_cache(maxsize=1)
 def encoder():
+    # Serverless deployments allow writes only beneath /tmp. Hugging Face's
+    # auxiliary/Xet caches otherwise default to a read-only home directory,
+    # even when FastEmbed receives its own writable cache_dir.
+    os.environ["HF_HOME"] = "/tmp/swiggy_huggingface"
+    os.environ["HF_HUB_CACHE"] = "/tmp/swiggy_huggingface/hub"
+    os.environ["HF_XET_CACHE"] = "/tmp/swiggy_huggingface/xet"
+    os.environ["XDG_CACHE_HOME"] = "/tmp/swiggy_cache"
+    os.environ["HF_HUB_DISABLE_XET"] = "1"
     from fastembed import TextEmbedding
     return TextEmbedding(model_name=MODEL, cache_dir=os.getenv("FASTEMBED_CACHE_PATH", "/tmp/swiggy_embeddings"), threads=2)
 

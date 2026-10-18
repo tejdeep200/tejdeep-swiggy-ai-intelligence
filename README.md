@@ -4,9 +4,9 @@ Public frontend: https://tejdeep-swiggy-ai-intelligence.vercel.app
 
 Cloud API health: https://tejdeep-swiggy-api.vercel.app/health
 
-The frontend and API code are deployed. Public chat and Snowflake charts require
-server-side secret configuration, which is pending owner approval. The local
-Docker application remains configured separately.
+The frontend and API are deployed with owner-approved server-side secrets.
+Public greeting, Snowflake chart and vector-grounded answer checks pass. The
+local Docker application remains configured separately.
 
 The existing Snowflake RAW loader and `swiggy_dbt` project feed an independent
 FastAPI/LangGraph API and Next.js website. No generated business data is used.
@@ -164,12 +164,14 @@ References: [Airflow Task SDK](https://airflow.apache.org/docs/task-sdk/stable/)
 ## Verified local result
 
 - Production website build passed; website and API are running in Docker.
-- 20 automated tests and all 21 existing dbt tests passed.
+- 21 automated tests and all 21 existing dbt tests passed.
 - The end-to-end Airflow run passed all 22 tasks using the verified Azure stage.
 - Published analytics cover 140,657 real listings; AI enrichment and RAG cover
   the explicitly bounded 20-listing sample.
 - A real website analytics request returned HTTP 200 and Snowflake chart rows.
 - A real website RAG request returned HTTP 200, one chart and four source listings.
+- Public Vercel smoke checks passed for site loading, published Snowflake data,
+  a greeting without charts, and a ratings chart with four cloud RAG sources.
 - AWS stage access is blocked by Snowflake integration permissions (error 3167).
 - Power BI embedding cannot be validated without authorized catalog entries and
   Entra/workspace/capacity configuration.
@@ -203,3 +205,7 @@ Airflow still runs in the local Docker installation: public queries can read
 the latest successful publication while that machine is off, but new scheduled
 ingestion requires the Airflow host to be running. A sleeping/unavailable
 warehouse or exhausted API/hosting quotas can still delay or block requests.
+
+Run `python scripts/check_public_site.py` for the bounded public smoke check.
+The model cache uses `/tmp` so Hugging Face downloads work on Vercel's otherwise
+read-only runtime filesystem. Model weights may be downloaded on a cold start.

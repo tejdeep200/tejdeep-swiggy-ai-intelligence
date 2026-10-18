@@ -133,3 +133,23 @@ def test_unsupported_question_bypasses_warehouse(monkeypatch):
     result = analytics.build_graph().invoke({"question": "Revenue?"})
     assert result["answer"] == "Revenue is unavailable."
     assert not result["charts"]
+
+
+def test_cloud_encoder_uses_writable_serverless_caches(monkeypatch):
+    import os
+    import sys
+    from types import SimpleNamespace
+    from swiggy_platform import cloud_rag
+    for name in ("HF_HOME", "HF_HUB_CACHE", "HF_XET_CACHE", "XDG_CACHE_HOME", "HF_HUB_DISABLE_XET"):
+        monkeypatch.setenv(name, "/read-only/cache")
+    def create_encoder(**kwargs):
+        assert all(os.environ[name].startswith("/tmp/") for name in ("HF_HOME", "HF_HUB_CACHE", "HF_XET_CACHE", "XDG_CACHE_HOME"))
+        assert os.environ["HF_HUB_DISABLE_XET"] == "1"
+        assert kwargs["cache_dir"].startswith("/tmp/")
+        return "encoder"
+    monkeypatch.setitem(sys.modules, "fastembed", SimpleNamespace(TextEmbedding=create_encoder))
+    cloud_rag.encoder.cache_clear()
+    try:
+        assert cloud_rag.encoder() == "encoder"
+    finally:
+        cloud_rag.encoder.cache_clear()
