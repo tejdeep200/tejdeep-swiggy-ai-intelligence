@@ -1,5 +1,13 @@
 # Swiggy AI Intelligence
 
+Public frontend: https://tejdeep-swiggy-ai-intelligence.vercel.app
+
+Cloud API health: https://tejdeep-swiggy-api.vercel.app/health
+
+The frontend and API code are deployed. Public chat and Snowflake charts require
+server-side secret configuration, which is pending owner approval. The local
+Docker application remains configured separately.
+
 The existing Snowflake RAW loader and `swiggy_dbt` project feed an independent
 FastAPI/LangGraph API and Next.js website. No generated business data is used.
 
@@ -173,3 +181,25 @@ Greetings return conversational replies without querying Snowflake or creating
 charts. Analytics questions select their own metrics, grouping, filters and
 dashboard title; broad overviews can include several charts. Dashboard summary
 cards describe the returned groups rather than always showing a global count.
+
+## Vercel deployment
+
+The frontend is the `frontend/` project. `scripts/prepare_vercel_backend.py`
+stages the existing FastAPI/shared code with the lightweight dependencies in
+`deploy/vercel-backend/`. The Vercel backend uses FastEmbed's ONNX MiniLM encoder
+and reads a durable 20-record vector mirror from Snowflake; the local pipeline
+continues to use ChromaDB and now synchronizes that mirror before publication.
+This removes the public app's dependency on a laptop-hosted vector service.
+
+`scripts/setup_cloud_reader.py` grants a dedicated `SWIGGY_APP_READER` role
+read access to publication metadata, mirrored vectors and immutable snapshots.
+The cloud runtime does not receive ACCOUNTADMIN privileges. Encrypted private
+key material can be supplied through `SNOWFLAKE_PRIVATE_KEY_BASE64`, with its
+passphrase in a separate server-side secret. No credential values belong in Git.
+`scripts/configure_vercel_env.py` sends owner-approved values over stdin to
+Vercel Secret environment variables. Redeploy after changing environment values.
+
+Airflow still runs in the local Docker installation: public queries can read
+the latest successful publication while that machine is off, but new scheduled
+ingestion requires the Airflow host to be running. A sleeping/unavailable
+warehouse or exhausted API/hosting quotas can still delay or block requests.

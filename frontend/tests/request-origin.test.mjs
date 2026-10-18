@@ -12,3 +12,8 @@ test('rejects other hosts, ports, protocols and malformed origins', () => {
   }
   assert.equal(isSameOrigin('http://localhost:3000', null, 'http://0.0.0.0:3000/api/ask'), false);
 });
+
+test('accepts the Vercel HTTPS origin while the internal transport uses HTTP', () => {
+  assert.equal(isSameOrigin('https://swiggy.vercel.app', 'swiggy.vercel.app', 'http://swiggy.vercel.app/api/ask', 'https:'), true);
+  assert.equal(isSameOrigin('http://swiggy.vercel.app', 'swiggy.vercel.app', 'http://swiggy.vercel.app/api/ask', 'https:'), false);
+});

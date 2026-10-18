@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { isSameOrigin } from '../../../lib/request-origin';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 // The application token stays on the Next.js server. Local services bind to
 // loopback. Add end-user authentication before exposing this server publicly.
 async function proxy(request: NextRequest, context: {params: Promise<{path: string[]}>}) {
@@ -9,7 +10,7 @@ async function proxy(request: NextRequest, context: {params: Promise<{path: stri
   const route = path.join('/');
   if (!/^(ask|freshness|transcribe|reports|reports\/[A-Za-z0-9_-]+\/embed)$/.test(route)) return Response.json({detail:'Not found'}, {status:404});
   const origin = request.headers.get('origin');
-  if (request.method === 'POST' && origin && !isSameOrigin(origin, request.headers.get('host'), request.url)) return Response.json({detail:'Request origin is not allowed. Open this app directly at its local URL.'}, {status:403});
+  if (request.method === 'POST' && origin && !isSameOrigin(origin, request.headers.get('host'), request.url, process.env.VERCEL === '1' ? 'https:' : undefined)) return Response.json({detail:'Request origin is not allowed. Open this app directly at its local URL.'}, {status:403});
   try {
     const headers: Record<string,string> = { Authorization: `Bearer ${process.env.APP_API_TOKEN || ''}` };
     const contentType = request.headers.get('content-type');

@@ -83,6 +83,11 @@ def create_snapshot(run_id):
     # Retries reuse the original immutable candidate snapshot.
     for table in TABLES:
         query(f"CREATE TRANSIENT TABLE IF NOT EXISTS {db}.{schema}.{table} CLONE {db}.MARTS.{table}")
+    reader = os.getenv("PUBLIC_READER_ROLE")
+    if reader:
+        reader = identifier(reader)
+        query(f"GRANT USAGE ON SCHEMA {db}.{schema} TO ROLE {reader}")
+        query(f"GRANT SELECT ON ALL TABLES IN SCHEMA {db}.{schema} TO ROLE {reader}")
     bad = query(f"""SELECT COUNT(*) n FROM {db}.{schema}.DIM_RESTAURANTS
         WHERE RESTAURANT_ID IS NULL OR CITY_NAME IS NULL OR RATING < 0 OR RATING > 5 OR AVERAGE_PRICE < 0""")[0]["n"]
     count = query(f"SELECT COUNT(*) n, COUNT(DISTINCT RESTAURANT_ID) unique_n FROM {db}.{schema}.DIM_RESTAURANTS")[0]
@@ -228,6 +233,8 @@ def upsert_vectors(snapshot):
                           embeddings=[lookup[content_hash(r)].tolist() for r in rows])
     # Every publication gets a full membership index, so removed listings disappear
     # from the next published collection while historical collections remain intact.
+    from .cloud_rag import mirror_collection
+    mirror_collection(name, client)
     return {**snapshot, "collection": name}
 
 

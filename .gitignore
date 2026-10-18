@@ -32,3 +32,4 @@ swiggy_dbt_1/
 *.key
 *.pfx
 *.p12
+.vercel/

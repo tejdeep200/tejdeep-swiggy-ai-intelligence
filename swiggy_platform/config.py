@@ -33,10 +33,19 @@ def connect():
                   warehouse=os.getenv("SNOWFLAKE_WAREHOUSE", "SWIGGY_WH"),
                   database=database(), schema="MARTS", login_timeout=30,
                   session_parameters={"STATEMENT_TIMEOUT_IN_SECONDS": 120, "QUERY_TAG": "swiggy_ai"})
-    key = os.getenv("SNOWFLAKE_PRIVATE_KEY_PATH")
-    if not key:
-        key = str(Path(os.getenv("SNOWFLAKE_KEY_DIR", str(Path.home() / ".dbt/keys"))) / "swiggy_dbt_key.p8")
-    kwargs.update(private_key_file=key, private_key_file_pwd=os.environ["DBT_SNOWFLAKE_KEY_PASSPHRASE"])
+    encoded_key = os.getenv("SNOWFLAKE_PRIVATE_KEY_BASE64")
+    if encoded_key:
+        import base64
+        from cryptography.hazmat.primitives import serialization
+        password = os.getenv("DBT_SNOWFLAKE_KEY_PASSPHRASE", "").encode() or None
+        private_key = serialization.load_pem_private_key(base64.b64decode(encoded_key, validate=True), password=password)
+        kwargs["private_key"] = private_key.private_bytes(
+            serialization.Encoding.DER, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())
+    else:
+        key = os.getenv("SNOWFLAKE_PRIVATE_KEY_PATH")
+        if not key:
+            key = str(Path(os.getenv("SNOWFLAKE_KEY_DIR", str(Path.home() / ".dbt/keys"))) / "swiggy_dbt_key.p8")
+        kwargs.update(private_key_file=key, private_key_file_pwd=os.environ["DBT_SNOWFLAKE_KEY_PASSPHRASE"])
     return snowflake.connector.connect(**kwargs)
 
 

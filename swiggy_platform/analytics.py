@@ -1,6 +1,7 @@
 """Validated business plans compile to parameterized, allowlisted SQL."""
 import json
 import re
+import os
 from typing import Literal, TypedDict
 
 from pydantic import BaseModel, Field
@@ -120,6 +121,9 @@ def route_plan(state):
 def rag_node(state):
     if not state["plan"]["supported"] or not state.get("publication", {}).get("rag_ready", False):
         return {"sources": []}
+    if os.getenv("RAG_STORE") == "snowflake":
+        from .cloud_rag import retrieve
+        return {"sources": retrieve(state["question"], state["publication"])}
     from .pipeline import chroma, embedding_model
     vector = embedding_model().encode([state["question"]], normalize_embeddings=True).tolist()
     collection = chroma().get_collection(state["publication"]["collection"])

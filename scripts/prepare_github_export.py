@@ -8,10 +8,10 @@ import zipfile
 from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_DIRS = ("frontend", "backend", "swiggy_platform", "config", "airflow", "swiggy_dbt", "scripts")
-EXCLUDED = {"node_modules", ".next", "__pycache__", "logs", "target", "dbt_packages", ".pytest_cache"}
+SOURCE_DIRS = ("frontend", "backend", "swiggy_platform", "config", "airflow", "swiggy_dbt", "scripts", "deploy")
+EXCLUDED = {"node_modules", ".next", ".vercel", "__pycache__", "logs", "target", "dbt_packages", ".pytest_cache"}
 ROOT_FILES = ("README.md", ".gitignore", ".dockerignore", ".env.example", "docker-compose.yml", "requirements.txt")
-EXTENSIONS = {".py", ".sql", ".yml", ".yaml", ".md", ".json", ".mjs", ".ts", ".tsx", ".css", ".txt"}
+EXTENSIONS = {".py", ".sql", ".yml", ".yaml", ".md", ".json", ".toml", ".mjs", ".ts", ".tsx", ".css", ".txt"}
 
 
 def prepare():
