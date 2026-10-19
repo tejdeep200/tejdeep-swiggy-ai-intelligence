@@ -53,11 +53,11 @@ export class VoicePlayback {
     this.platform.synth.speak(utterance);
   }
 
-  async speak(text:string) {
+  async speak(text:string, immediateDevice=false) {
     this.stop();const generation=this.generation;
     const summary=speechSummary(text);if(!summary)return;
     const deviceVoice=preferredFemaleVoice(this.platform.synth?.getVoices()||[]);
-    if(deviceVoice && /natural|neural|online/i.test(deviceVoice.name)) {
+    if(deviceVoice && (immediateDevice || /natural|neural|online/i.test(deviceVoice.name))) {
       this.speakDevice(summary,deviceVoice,generation);return;
     }
     this.request=new AbortController();this.callbacks.loading(true);this.callbacks.notice('');

@@ -70,3 +70,12 @@ test('Stop prevents the latency deadline from starting fallback speech',async(t)
   resolve(new Response(new Blob(['RIFFaudio'])));await pending;
   assert.equal(state.utterance,null);assert.equal(state.played,0);
 });
+
+
+test('an explicit chart narration restarts after Stop without waiting for the server',async()=>{
+ let requests=0;
+ const {voice,state}=fixture(async()=>{requests++;throw new Error('must not fetch')});
+ voice.stop();await voice.speak('Average rating. Mumbai: 4.5, highest shown.',true);
+ assert.equal(requests,0);assert.match(state.utterance.text,/Mumbai: 4.5/);
+ assert.equal(state.utterance.voice.name,'Microsoft Zira');
+});
