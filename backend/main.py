@@ -26,9 +26,13 @@ class Message(BaseModel):
     content: str = Field(max_length=4000)
 
 
+from swiggy_platform.analytics import Plan
+
+
 class Question(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     history: list[Message] = Field(default_factory=list, max_length=6)
+    dashboard_context: Plan | None = None
 
 
 class SpeechRequest(BaseModel):
@@ -66,8 +70,8 @@ def freshness():
 def ask(request: Question):
     from swiggy_platform.analytics import build_graph
     try:
-        result = build_graph().invoke({"question": request.question, "history": [m.model_dump() for m in request.history]})
-        return jsonable_encoder({k: result.get(k) for k in ("answer", "charts", "reports", "sources", "publication", "dashboard_title")})
+        result = build_graph().invoke({"question": request.question, "history": [m.model_dump() for m in request.history], "dashboard_context": request.dashboard_context.model_dump() if request.dashboard_context else None})
+        return jsonable_encoder({k: result.get(k) for k in ("answer", "charts", "reports", "sources", "publication", "dashboard_title", "dashboard_context")})
     except Exception as exc:
         LOG.error("Analytics request failed (%s)", type(exc).__name__)
         raise HTTPException(503, "Analytics unavailable. Verify Groq, the published Snowflake snapshot and the RAG service.") from None

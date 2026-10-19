@@ -185,3 +185,33 @@ def test_natural_female_voice_survives_provider_terms_block(monkeypatch):
     assert speech.synthesize("Hello") == (b"RIFFnatural-female-audio", "Heart")
     assert speech.synthesize("Hello again")[1] == "Heart"
     assert groq.with_options.return_value.audio.speech.create.call_count == 1
+
+
+@pytest.mark.parametrize("question", ["Explain the charts", "explain this report", "Explain the current dashboard charts and their values"])
+def test_explanation_retains_dashboard_metrics_filters_and_reports(monkeypatch, question):
+    previous = analytics.Plan(metric="average_rating", metrics=["average_rating", "average_price"], city="Mumbai", sort_direction="asc", limit=5).model_dump()
+    monkeypatch.setattr(analytics, "latest_publication", lambda: {"snapshot_schema":"SNAP_A", "freshness":"fresh", "ai_scope":"20 listings", "rag_ready":False})
+    statements=[]
+    monkeypatch.setattr(analytics, "query", lambda sql, params: statements.append((sql, params)) or [{"dimension":"Mumbai", "value":4}])
+    monkeypatch.setattr(analytics, "catalog", lambda:[{"key":"ratings", "title":"Ratings report", "metrics":["average_rating"]}])
+    calls=[]
+    def explain(messages, **kwargs):
+        calls.append(messages)
+        assert 'Mumbai' in messages[-1]['content']
+        assert 'average_price' in messages[-1]['content']
+        return 'Mumbai has an average rating of 4 in the displayed chart.'
+    monkeypatch.setattr(analytics, "llm", explain)
+    result=analytics.build_graph().invoke({"question":question,"dashboard_context":previous})
+    assert len(calls)==1
+    assert [c['metric'] for c in result['charts']]==['average_rating','average_price']
+    assert all(p==['%Mumbai%'] and 'ASC' in sql and 'LIMIT 5' in sql for sql,p in statements)
+    assert result['reports'][0]['key']=='ratings'
+    assert result['dashboard_context']==previous
+
+
+def test_explanation_without_dashboard_asks_for_chart(monkeypatch):
+    monkeypatch.setattr(analytics,'llm',lambda *a,**k:analytics.Plan(intent='explain').model_dump_json())
+    monkeypatch.setattr(analytics,'query',Mock(side_effect=AssertionError('No chart to query')))
+    result=analytics.build_graph().invoke({'question':'Explain the chart'})
+    assert 'create a chart first' in result['answer']
+    assert result['charts']==[]
